@@ -1,2 +1,2 @@
 # python3d
-OpenGL in python examples
+OpenGL in python and pygame
