@@ -69,7 +69,7 @@ def drawCube():
     glEnd()
 
 def loadTexture():
-    textureSurface = pygame.image.load('img\crate.bmp')
+    textureSurface = pygame.image.load('crate.bmp')
     textureData = pygame.image.tostring(textureSurface, "RGBA", 1)
     width = textureSurface.get_width()
     height = textureSurface.get_height()

@@ -1,6 +1,6 @@
 import pygame
 from pygame.locals import *
-
+#pip3 install pyopenGL
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
