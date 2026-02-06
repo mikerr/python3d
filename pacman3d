@@ -62,7 +62,7 @@ maze = [
 
 ghosts = []
 dots = []
-p = 0
+player = 0
 
 class shapeobj:
     x = y = z = 0
@@ -109,7 +109,7 @@ def loadTexture():
     return texid
 
 def init():
-    global walls,p,ghosts,dots
+    global walls,player,ghosts,dots
     
     pygame.init()
     display = (900,900)
@@ -153,13 +153,13 @@ def init():
         g.xd = 1
         ghosts.append(g)
     
-    p = shapeobj()
-    p.x = p.y = 1
-    p.z = -75
+    player = shapeobj()
+    player.x = player.y = 1
+    player.z = -75
     loadTexture()
 
 def render():
-        global x,walls,p,ghosts,dots
+        global walls,player,ghosts,dots
         
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         glMatrixMode(GL_MODELVIEW) # operate on model
@@ -172,7 +172,7 @@ def render():
         
         #player pacman
         glLoadIdentity()
-        glTranslatef(p.x *2, p.y *2, -75)
+        glTranslatef(player.x *2, player.y *2, -75)
         glColor3f(1,1,0)
         gluQuad = gluNewQuadric()
         gluSphere(gluQuad,1,30,5)
@@ -227,28 +227,23 @@ def hitwalls(s):
     return hit   
     
 def game() :
-    global p,ghosts,dots
+    global player,ghosts,dots
     
     keys = pygame.key.get_pressed()
-   
-    exits = findgaps(p)
-  
+
     move = [0,0]
-    if keys[pygame.K_RIGHT]:
-        move = [1,0]     
-    if keys[pygame.K_LEFT] :
-        move = [-1,0]
-    if keys[pygame.K_UP]   :
-        move = [0,1]
-    if keys[pygame.K_DOWN] :
-        move = [0,-1]
-    if move in exits: p.xd,p.yd = move
+    if keys[pygame.K_RIGHT]: move = [1,0]     
+    if keys[pygame.K_LEFT] : move = [-1,0]
+    if keys[pygame.K_UP]   : move = [0,1]
+    if keys[pygame.K_DOWN] : move = [0,-1]
+    exits = findgaps(player)
+    if move in exits: player.xd,player.yd = move
  
-    if hitwalls(p) :
-        p.xd = p.yd = 0
+    if hitwalls(player) :
+        player.xd = player.yd = 0
     
     for g in ghosts:
-        if abs(g.x-p.x) < 0.5 and abs(g.y-p.y) < 0.5 :
+        if abs(g.x-player.x) < 0.5 and abs(g.y-player.y) < 0.5 :
             init() # collide with ghost and die
         if hitwalls(g):
             exits = findgaps(g)
@@ -257,7 +252,7 @@ def game() :
             g.yd = exits[dir][1]
                     
     for d in dots:
-        if abs(d.x/2 -p.x) < 0.5 and abs(d.y/2 -p.y) < 0.5:
+        if abs(d.x/2 - player.x) < 0.5 and abs(d.y/2 - player.y) < 0.5:
             dots.remove(d)
 
 init()
