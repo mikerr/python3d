@@ -1,4 +1,4 @@
-import pygame, random, time
+import pygame, random
 from pygame.locals import *
 
 from OpenGL.GL import *
@@ -28,20 +28,6 @@ faces = [
             [4, 1, 0],
             [2, 6, 7],
             [2, 7, 3]]
-facecolors = [
-            [15,0,0], # red
-            [15,0,0],
-            [0,15,0], # green
-            [0,15,0],
-            [0,0,15], # blue
-            [0,0,15],
-            [15,15,0], # yellow
-            [15,15,0],
-            [0,15,15], # cyan
-            [0,15,15],
-            [15,0,15], # magenta
-            [15,0,15]
-            ]
 
 WALL = 0
 #define BISCUIT  1
@@ -73,6 +59,9 @@ maze = [
     [0, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ]
+
+ghosts:list = []
+p = 0
 
 class shapeobj:
     x = y = z = 0
@@ -120,7 +109,7 @@ def loadTexture():
     return texid
 
 def init():
-    global cubes,player
+    global walls,p,ghosts
     
     pygame.init()
     display = (900,900)
@@ -129,77 +118,126 @@ def init():
     glMatrixMode(GL_PROJECTION) # operate on projection (world)
     glLoadIdentity()           
     
-    glTranslatef(-0.5, -0.9, 0)
+    #glRotatef(270,0,0,1)
+    glTranslatef(-0.8,-0.7, 0)
     gluPerspective(40.0, display[0]/display[1], 0.1, 100.0)
     glFrontFace(GL_CCW)
     #glEnable(GL_CULL_FACE)  # doesn't need normals if winding order is correct 
     #glEnable(GL_DEPTH_TEST)
-
-    cubes = []
+    #gluLookAt(20,-10,-30,0,0,-44.5,0,1,0);
+    walls = []
     
-    x = y = 0
-    for row in maze:       
-        x = 0
-        for col in row:
-            if (col == WALL):
-                c = shapeobj()
-                c.x =  x * 2
-                c.z = -75
-                c.y =  y * 2
-                cubes.append(c)  
-            x += 1
-        y += 1
-        
-    player = shapeobj()
-    player.z = -5
+    for y in range(len(maze)):       
+        for x in range(len(maze[0])):
+            if (maze[y][x] == WALL):
+                w = shapeobj()
+                w.x = x * 2
+                w.z = -75
+                w.y = y * 2
+                walls.append(w)  
+    
+    ghosts = []
+    ghostcolors = [[1,0,0],[0.7,0.5,0.5],[0,1,1],[1,0.5,0]] # red,pink,cyan,orange
+    for color in ghostcolors :
+        g = shapeobj()
+        g.color = color
+        g.x = random.randrange(8,11)
+        g.y = 8
+        g.xd = 1
+        ghosts.append(g)
+    
+    p = shapeobj()
+    p.x = p.y = 1
+    p.z = -75
     loadTexture()
-    
+
 def render():
-        global cubes,player,px,py,pz
+        global x,cubes,p,ghosts
         
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         glMatrixMode(GL_MODELVIEW) # operate on model
   
-        for c in cubes :  
+        #walls
+        for w in walls :  
             glLoadIdentity()
-            glTranslatef(c.x, c.y, c.z)
+            glTranslatef(w.x, w.y, w.z)
             drawCube()
         
-        player.x = px * 2
-        player.y = py * 2
-        
+        #player pacman
         glLoadIdentity()
-        glTranslatef(player.x, player.y, -75)
-        drawCube()
+        glTranslatef(p.x *2, p.y *2, -75)
+        glColor3f(1,1,0)
+        gluQuad = gluNewQuadric()
+        gluSphere(gluQuad,1,30,5)
+        #drawCube()
         
+        #ghosts
+        for g in ghosts:
+            glLoadIdentity()
+            glTranslatef(g.x *2, g.y *2, -75)
+            glColor3f(*g.color)
+            gluQuad = gluNewQuadric()
+            gluSphere(gluQuad,1,10,10)
+            glColor3f(1,1,1)
+            glTranslatef(-0.3,0,0) #eyes
+            gluSphere(gluQuad,0.2,5,5)
+            glTranslatef(0.5,0,0)
+            gluSphere(gluQuad,0.2,5,5)
+            #drawCube()
+        glColor3f(1,1,1)
+
         pygame.display.flip()
-        
-px = py = 1
-xd = 1
-yd = 0
+
+def findgaps(s):
+    exits = []
+    if maze[round(s.y + 1)][round(s.x)]: exits.append([0,1])
+    if maze[round(s.y - 1)][round(s.x)]: exits.append([0,-1])
+    if maze[round(s.y)][round(s.x + 1)]: exits.append([1,0])
+    if maze[round(s.y)][round(s.x - 1)]: exits.append([-1,0])
+    return exits
+
+def hitwalls(s):
+    hit = 0
+    nextx = s.x + s.xd / 5
+    nexty = s.y + s.yd / 5
+    
+    dest = maze[round(nexty)][round(nextx)]
+    
+    if (dest == WALL): hit = 1
+    else : hit = 0
+    
+    if not hit:
+        s.x = nextx
+        s.y = nexty
+    
+    if s.xd == 0: s.x = round(s.x)
+    if s.yd == 0: s.y = round(s.y)
+    #wraparound
+    if s.x < 0 : s.x = 17
+    if s.x > 17.5 : s.x = 0
+    
+    return hit   
+    
 def game() :
-    global player,px,py,xd,yd
-    step = 1
+    global p,ghosts
     
     keys = pygame.key.get_pressed()
    
-    if keys[pygame.K_RIGHT]: xd = step; yd = 0
-    if keys[pygame.K_LEFT] : xd = -step; yd = 0
-    if keys[pygame.K_UP]   : yd = step; xd = 0
-    if keys[pygame.K_DOWN] : yd = -step; xd = 0
+    if keys[pygame.K_RIGHT]: p.xd = 1; p.yd = 0
+    if keys[pygame.K_LEFT] : p.xd = -1; p.yd = 0
+    if keys[pygame.K_UP]   : p.yd = 1; p.xd = 0
+    if keys[pygame.K_DOWN] : p.yd = -1; p.xd = 0
+ 
+    if hitwalls(p) : p.xd = p.yd = 0
     
-    dest = maze[int(py + yd)][int(px + xd)]
-    
-    if (dest != WALL and xd !=0): px += xd
-    else : xd = 0
-    if (dest != WALL and yd !=0): py += yd
-    else : yd = 0
-    
-    
-    #wraparound
-    if px < 0 : px = 17
-    if px > 17 : px = 0
-    
+    for g in ghosts:
+        exits = findgaps(g)
+        
+        if hitwalls(g):
+            dir = random.randrange(len(exits))
+            g.xd = exits[dir][0]
+            g.yd = exits[dir][1]
+                  
 init()
 while True:
     for event in pygame.event.get():
