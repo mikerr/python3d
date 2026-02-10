@@ -60,13 +60,14 @@ maze = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
-ghosts = []
-dots = []
+ghosts:list = []
+dots:list = []
 player = 0
 
 class shapeobj:
     x = y = z = 0
     xd = yd = zd = 0
+    color= 0
     
 def drawCube():
     glBegin(GL_QUADS)
@@ -90,7 +91,7 @@ def drawCube():
 
 def loadTexture():
     textureSurface = pygame.image.load('crate.bmp')
-    textureData = pygame.image.tostring(textureSurface, "RGBA", 1)
+    textureData = pygame.image.tostring(textureSurface, "RGBA", True)
     width = textureSurface.get_width()
     height = textureSurface.get_height()
 
@@ -256,13 +257,29 @@ def game() :
             dots.remove(d)
 
 init()
+dragging = False
+lasty = 0
+lastx = 0
 while True:
     for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+            if event.type == pygame.MOUSEBUTTONDOWN: dragging = True
+            if event.type == pygame.MOUSEBUTTONUP: dragging = False
+            if event.type == pygame.MOUSEMOTION and dragging == True:
+                mouse_x, mouse_y = event.pos
+                
+                horiz = lastx - mouse_x
+                vert = lasty - mouse_y
+                
+                lastx,lasty = event.pos
+                
+                glMatrixMode(GL_PROJECTION)
+                glTranslatef(50,50,-75)
+                glRotatef(1,vert *2,0,horiz *2)
+                glTranslatef(-50,-50,75)
+    
     game()
-    #glMatrixMode(GL_PROJECTION)
-    #glTranslatef(-0.001,0.55,0)
-    #glRotatef(-0.5,5,0,0)
     render()
+
