@@ -1,4 +1,4 @@
-# mandelbrot set, in 3D 
+# mandelbrot set, in 3D
 
 import pygame, math,random
 from pygame.locals import *
@@ -6,17 +6,20 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 vertices = []
+height = 20
+
+w = h = 100
+max_iter = 255
+
 def mandel(cx,cy,scale) :
     global vertices
     
     vertices = []
-    WIDTH = HEIGHT = 100
-
-    max_iter = 255
-    for i in range(0,HEIGHT):
-      y = (i - HEIGHT/2) * scale + cy;
-      for j in range (0,WIDTH):
-        x = (j - WIDTH/2) * scale + cx;
+   
+    for i in range(0,h):
+      y = (i - h/2) * scale + cy;
+      for j in range (0,w):
+        x = (j - w/2) * scale + cx;
         
         xs = (x - 0.25)
         zx = math.sqrt(xs * xs + y * y)
@@ -26,15 +29,31 @@ def mandel(cx,cy,scale) :
         zx = zy = zx2 = zy2 = 0
         iter = 0
         for n in range (max_iter):
-            iter = n
+            iters = n
             zy = 2 * zx * zy + y
             zx = zx2 - zy2 + x
             zx2 = zx * zx
             zy2 = zy * zy
             if (zx2 + zy2 > 4) : break
         if (iter < max_iter):
-                vertices.append((iter/20.0,i/5.0,j/5.0))
-
+                vertices.append((iters/height,i/5.0,j/5.0))
+                
+def julia(cx,cy,scale):
+    global vertices
+    vertices = []
+    for x in range(0,w):
+        for y in range(0,h):
+            zx =  (x - w/2) / w * 3 * scale
+            zy =   (y - h/2) / h * 2 * scale
+            i = max_iter
+            while zx*zx + zy*zy < 4 and i > 1:
+                tmp = zx*zx - zy*zy + cx
+                zy = 2.0 * zx * zy + cy
+                zx =  tmp              
+                i -= 1
+                
+            vertices.append((i/height,x/5.0,y/5.0))
+            
 def draw():
     glBegin(GL_POINTS)
     
@@ -48,6 +67,8 @@ def draw():
 cx = -0.6
 cy = 0
 scale = 0.02
+fractal = "mandel"
+
 def init():
     global vertices
     
@@ -59,10 +80,9 @@ def init():
     glTranslatef(-2.0,-10.0, -30)
     
     vertices = []
-    mandel(cx,cy,scale)
            
 def render():
-    global cx,cy,scale
+    global cx,cy,scale, height, fractal
     
     while True:
         for event in pygame.event.get():
@@ -73,11 +93,19 @@ def render():
         if keys[pygame.K_a]: scale *= 0.98
         if keys[pygame.K_z]: scale *= 1.02
         
+        if keys[pygame.K_w]: height *= 0.9
+        if keys[pygame.K_s]: height *= 1.1
+        
         if keys[pygame.K_LEFT]:  cx += 0.001
         if keys[pygame.K_RIGHT]: cx -= 0.001
         
         if keys[pygame.K_UP]:    cy += 0.001
         if keys[pygame.K_DOWN]:  cy -= 0.001
+        
+        if keys[pygame.K_m]:  fractal = "mandel"
+        if keys[pygame.K_j]:
+            fractal = "julia"
+            cx,cy = (-0.45,0.56)
         
         # interesting destinations
         if keys[pygame.K_1]: cx,cy = (-0.5,0);   scale = 0.02 # home
@@ -91,9 +119,12 @@ def render():
         if keys[pygame.K_9]: cx,cy = (-0.74,0.169); scale = 0.0001517
         if keys[pygame.K_0]: cx,cy = (-0.11,0.9); scale = 0.00033
         
-        
-        mandel(cx,cy,scale)
-        print (cx,cy,scale)
+        if any(pygame.key.get_pressed()):
+            if fractal == "mandel":
+                mandel(cx,cy,scale)
+            else:
+                julia(cx,cy,scale)
+            print (cx,cy,scale)
         
         glRotatef(1, 0, 1, 0.5)
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
