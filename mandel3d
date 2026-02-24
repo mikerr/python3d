@@ -13,7 +13,6 @@ max_iter = 255
 
 def mandel(cx,cy,scale) :
     global vertices
-    
     vertices = []
    
     for i in range(0,h):
@@ -26,17 +25,16 @@ def mandel(cx,cy,scale) :
         if (x < zx - 2 * zx * zx + 0.25) : continue
         if ((x + 1)*(x + 1) + y * y < 1/16) : continue
 
-        zx = zy = zx2 = zy2 = 0
-        iter = 0
+        zx = zy = 0
         for n in range (max_iter):
-            iters = n
-            zy = 2 * zx * zy + y
-            zx = zx2 - zy2 + x
+            iters = n       
             zx2 = zx * zx
             zy2 = zy * zy
+            zy = 2 * zx * zy + y
+            zx = zx2 - zy2 + x
             if (zx2 + zy2 > 4) : break
-        if (iter < max_iter):
-                vertices.append((iters/height,i/5.0,j/5.0))
+        if (iters < max_iter-1):
+            vertices.append((iters/height,i/5.0,j/5.0))
                 
 def julia(cx,cy,scale):
     global vertices
@@ -44,23 +42,32 @@ def julia(cx,cy,scale):
     for x in range(0,w):
         for y in range(0,h):
             zx =  (x - w/2) / w * 3 * scale
-            zy =   (y - h/2) / h * 2 * scale
-            i = max_iter
-            while zx*zx + zy*zy < 4 and i > 1:
-                tmp = zx*zx - zy*zy + cx
-                zy = 2.0 * zx * zy + cy
-                zx =  tmp              
-                i -= 1
-                
-            vertices.append((i/height,x/5.0,y/5.0))
+            zy =  (y - h/2) / h * 2 * scale
+
+            for n in range (max_iter):
+                iters = n
+                zx2 = zx * zx
+                zy2 = zy * zy
+                zy = 2 * zx * zy + cy
+                zx = zx2 - zy2 + cx
+                if (zx2 + zy2 > 4) : break
+            if (iters < max_iter-1):
+                vertices.append((iters/height,x/5.0,y/5.0))
             
 def draw():
-    glBegin(GL_POINTS)
     
+    glPointSize(1.0)
+    glBegin(GL_POINTS)
+    glColor3f(0,1,0)
     for vertex in vertices:
-        color = int(vertex[0])
-        r = g = b = color
-        #glColor3f(r,g,b)
+        
+        if drawcolor:
+            color = int(vertex[0] * height)
+            r = color & 48
+            g = color & 12
+            b = color & 3
+            glColor3f(r,g,b)
+            
         glVertex3fv(vertex)
     glEnd()
 
@@ -68,6 +75,7 @@ cx = -0.6
 cy = 0
 scale = 0.02
 fractal = "mandel"
+drawcolor = True
 
 def init():
     global vertices
@@ -82,8 +90,9 @@ def init():
     vertices = []
            
 def render():
-    global cx,cy,scale, height, fractal
+    global cx,cy,scale, height, fractal, drawcolor
     
+    mandel(cx,cy,scale)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -96,16 +105,16 @@ def render():
         if keys[pygame.K_w]: height *= 0.9
         if keys[pygame.K_s]: height *= 1.1
         
-        if keys[pygame.K_LEFT]:  cx += 0.001
-        if keys[pygame.K_RIGHT]: cx -= 0.001
+        if keys[pygame.K_LEFT]:  cx += 0.01
+        if keys[pygame.K_RIGHT]: cx -= 0.01
         
-        if keys[pygame.K_UP]:    cy += 0.001
-        if keys[pygame.K_DOWN]:  cy -= 0.001
+        if keys[pygame.K_UP]:    cy += 0.01
+        if keys[pygame.K_DOWN]:  cy -= 0.01
         
         if keys[pygame.K_m]:  fractal = "mandel"
-        if keys[pygame.K_j]:
-            fractal = "julia"
-            cx,cy = (-0.45,0.56)
+        if keys[pygame.K_j]:  fractal = "julia"
+        
+        if keys[pygame.K_c]:  drawcolor = not drawcolor
         
         # interesting destinations
         if keys[pygame.K_1]: cx,cy = (-0.5,0);   scale = 0.02 # home
@@ -133,4 +142,3 @@ def render():
         pygame.time.wait(4)
 init()
 render()
-
