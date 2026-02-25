@@ -1,4 +1,4 @@
-# pacman - 80s game,but in 3D
+# super simple 3d earth, texmapped sphere, no fragment shader
 
 import pygame, time, random
 from pygame.locals import *
