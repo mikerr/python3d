@@ -1,10 +1,10 @@
 # super simple 3d earth, texmapped sphere, no fragment shader
 
-import pygame, time, random
+import pygame, math, time
 from pygame.locals import *
 
 from OpenGL.GL import *
-from OpenGL.GLU import *
+#from OpenGL.GLU import *
 
 def loadTexture():
     textureSurface = pygame.image.load('earth.jpg')
@@ -35,7 +35,8 @@ def init():
     glMatrixMode(GL_PROJECTION) # operate on projection (world)
     glLoadIdentity()           
     
-    gluPerspective(40.0, display[0]/display[1], 0.1, 200.0)
+    #gluPerspective(40.0, display[0]/display[1], 0.1, 200.0)
+    glOrtho(-25,25,-25,25,0,50.0)
     glTranslatef(0,0,-50)
     
     glFrontFace(GL_CCW)
@@ -43,35 +44,62 @@ def init():
  
     loadTexture()
 
+def drawSphere(r,lats,longs): 
+
+    for i in range(lats+1):
+        lat0 = math.pi * (-0.5 + (i - 1) / lats)
+        z0  = math.sin(lat0)
+        zr0 = math.cos(lat0)
+
+        lat1 = math.pi * (-0.5 + i / lats)
+        z1 = math.sin(lat1)
+        zr1 = math.cos(lat1)
+        
+        glBegin(GL_QUAD_STRIP);
+        for j in range (longs+1): 
+            lng = 2 * math.pi * (j - 1) / longs
+            x = math.cos(lng)
+            y = math.sin(lng)
+
+            u = i / longs
+            v = j / lats
+            u1 = (i + 1) / longs
+            
+            #glNormal3f(x * zr0, y * zr0, z0)
+            glTexCoord2f(v, u)
+            glVertex3f(r * x * zr0, r * y * zr0, r * z0)
+            
+            #glNormal3f(x * zr1, y * zr1, z1)
+            glTexCoord2f(v, u1)
+            glVertex3f(r * x * zr1, r * y * zr1, r * z1)
+
+        glEnd()
+    
 def render():
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         glMatrixMode(GL_MODELVIEW) # operate on model
-  
-        white = (1,1,1)
-        yellow = (1,1,0)
-        blue = (0,0,1)
         
         glLoadIdentity()
         glTranslatef(0,0, 0)
-        #glColor3f(*white)
         glRotatef(270,1,0,0)
-        #glRotatef(30,1,1,0)
-        gluQuad = gluNewQuadric()
-        gluQuadricTexture(gluQuad,GL_TRUE)
-        gluSphere(gluQuad,15,25,25)
-       
+        #glRotatef(-30,0,1,0)
+        
+        #glu depreciated...
+        #gluQuad = gluNewQuadric()
+        #gluQuadricTexture(gluQuad,GL_TRUE)
+        #gluSphere(gluQuad,15,25,25)
+        drawSphere(15,25,25)
         pygame.display.flip()
 
-def game() :
-    keys = pygame.key.get_pressed()
-
-    move = [0,0]
-
-init()
 
 dragging = False
 lastx = lasty = 0
-while True:
+
+def game() :
+    global dragging, lastx, lasty
+    
+    keys = pygame.key.get_pressed()
+
     for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -90,6 +118,10 @@ while True:
                 glRotatef(1,-vert,-horiz,0)
     glMatrixMode(GL_PROJECTION)
     glRotate(-1,0,1,0)
+    
+    
+init()
+while True:
     time.sleep(0.05)
     game()
     render()
