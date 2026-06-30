@@ -116,6 +116,13 @@ def game() :
                 
                 glMatrixMode(GL_PROJECTION)
                 glRotatef(1,-vert,-horiz,0)
+            if event.type == pygame.MOUSEWHEEL:
+                glMatrixMode(GL_PROJECTION)
+                if event.y == 1 : scale = 0.9
+                else: scale = 1.1
+                glScale(scale,scale,scale)
+                print(event.y)
+
     glMatrixMode(GL_PROJECTION)
     glRotate(-1,0,1,0)
     
